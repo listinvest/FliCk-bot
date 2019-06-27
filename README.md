@@ -1,2 +1,2 @@
-# kevin-bot
+# FliCk-bot
 Self balancing robot
