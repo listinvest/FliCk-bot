@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const arrayLenght = 50
+
 // Cell is one slot of the shift array
 type Cell struct {
 	mediaE   float64
@@ -38,7 +40,6 @@ type Out struct {
 
 // PidINFO struct contains vars of PID and time-window calculation
 type PidINFO struct {
-	arrayLenght  int
 	windowTime   int64
 	windowLenght int
 	firstI       int
@@ -62,10 +63,9 @@ var in In
 var out Out
 
 // newPidINFO creates a new PidINFO struct
-func newPidINFO(arrayLenght int, windowTime int64, kP float64, kI float64, kD float64) PidINFO {
+func newPidINFO(windowTime int64, kP float64, kI float64, kD float64) PidINFO {
 	var n PidINFO
 
-	n.arrayLenght = arrayLenght
 	n.windowTime = windowTime
 	n.kP = kP
 	n.kI = kI
@@ -114,7 +114,7 @@ func (pidINFO *PidINFO) computePid(e float64, deltaT int64) {
 
 	pidINFO.addCell()
 
-	for pidINFO.deltaTsum > windowTime && pidINFO.windowLenght > 1 {
+	for pidINFO.deltaTsum > pidINFO.windowTime && pidINFO.windowLenght > 1 {
 		pidINFO.rmvCell()
 	}
 
@@ -146,9 +146,9 @@ func reader() {
 }
 
 // setWheelPwr sets the power to wheels' motors (Out, PidINFO)
-func setWheelsPwr() {
-	out.lWheelMotor = int(gyroPid.correction)
-	out.rWheelMotor = int(gyroPid.correction)
+func (pidINFO *PidINFO) setWheelsPwr() {
+	out.lWheelMotor = int(pidINFO.correction)
+	out.rWheelMotor = int(pidINFO.correction)
 }
 
 // applyMotorsCmd sends the command to the motors (Out)
@@ -169,8 +169,8 @@ func main() {
 	bot.Init()
 	defer bot.Close()
 
-	// parameters: arrayLenght, windowTime, kP, kI, kD
-	gyroPid := newPidINFO(50, 5000, 1, 0.5, 0.01)
+	// parameters: arrayLenght, windowTime, kP, kI, kD ...1, 0.5, 0.01
+	gyroPid := newPidINFO(5000, 0, 0, 0)
 
 	// TO CREATE VARS...
 	var i = 0
@@ -213,8 +213,8 @@ func main() {
 		//i = i % 5000
 		//.
 
-		setWheelsPwr()
-		applyMotorsCmd()
+		// gyroPid.setWheelsPwr()
+		// applyMotorsCmd()
 	}
 
 	// TO WRITE THE FILE...
