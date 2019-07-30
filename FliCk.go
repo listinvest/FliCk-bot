@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// arrayLenght is the lenght of every PID array
 const arrayLenght = 50
 
 // Cell is one slot of the shift array
@@ -19,15 +20,19 @@ type Cell struct {
 
 // In struct contains inputs from board
 type In struct {
-	lWheelEnc int
-	rWheelEnc int
-	lLegEnc   int
-	rLegEnc   int
-	xGyro     float64
-	yGyro     float64
-	zGyro     float64
-	time      time.Time
-	deltaT    int64
+	lLegEnc        int
+	rLegEnc        int
+	lWheelEnc      int
+	rWheelEnc      int
+	last_lWheelEnc int
+	last_rWheelEnc int
+	lWheelSpeed    float64
+	rWheelSpeed    float64
+	xGyro          float64
+	yGyro          float64
+	zGyro          float64
+	time           time.Time
+	deltaT         int64
 }
 
 // Out struct contains commands to the board
@@ -58,9 +63,6 @@ type PidINFO struct {
 	kI           float64
 	kD           float64
 }
-
-var in In
-var out Out
 
 // newPidINFO creates a new PidINFO struct
 func newPidINFO(windowTime int64, kP float64, kI float64, kD float64) PidINFO {
@@ -136,13 +138,19 @@ func (pidINFO *PidINFO) computePid(e float64, deltaT int64) {
 }
 
 // reader reads data from the board (In)
-func reader() {
+func (in *In) reader() {
 	in.xGyro, in.yGyro, in.zGyro = bot.ReadGyro()
+
+	in.last_lWheelEnc = in.lWheelEnc
+	in.last_rWheelEnc = in.rWheelEnc
 	in.lWheelEnc, in.rWheelEnc, in.rLegEnc, in.lLegEnc = bot.ReadAllEncoders()
 
 	// deltaT in microseconds
 	in.deltaT = time.Since(in.time).Nanoseconds() / 1000
 	in.time = time.Now()
+
+	in.lWheelSpeed = (in.lWheelEnc - in.last_lWheelEnc) / in.deltaT
+	in.rWheelSpeed = (in.rWheelEnc - in.last_rWheelEnc) / in.deltaT
 }
 
 // setWheelPwr sets the power to wheels' motors (Out, PidINFO)
@@ -169,9 +177,14 @@ func main() {
 	bot.Init()
 	defer bot.Close()
 
-	// parameters: arrayLenght, windowTime, kP, kI, kD ...1, 0.5, 0.01
-	gyroPid := newPidINFO(5000, 0, 0, 0)
+	var in In
+	var out Out
 
+	// parameters: windowTime, kP, kI, kD ...1, 0.5, 0.01
+	// gyroPid := newPidINFO(5000, 0, 0, 0)
+	lWheelPid := newPidINFO(5000, 0, 0, 0)
+
+	/*
 	// TO CREATE VARS...
 	var i = 0
 	var infoT [5000]int64
@@ -186,6 +199,7 @@ func main() {
 
 	var start = in.time
 	//.
+	*/
 
 	for {
 		if bot.CheckQuit() {
@@ -193,9 +207,11 @@ func main() {
 			break
 		}
 
-		reader()
-		gyroPid.computePid(-in.yGyro, in.deltaT)
+		in.reader()
+		// gyroPid.computePid(-in.yGyro, in.deltaT)
+		lWheelPid.computePid(in.lWheelSpeed, in.deltaT)
 
+		/*
 		// TO GET VALUES...
 		infoT[i] = time.Since(start).Nanoseconds() / 1000
 
@@ -212,11 +228,12 @@ func main() {
 		}
 		//i = i % 5000
 		//.
+		*/
 
 		// gyroPid.setWheelsPwr()
 		// applyMotorsCmd()
 	}
-
+/*
 	// TO WRITE THE FILE...
 	file, err := os.Create("test.txt")
 	if err != nil {
@@ -244,3 +261,4 @@ func main() {
 	}
 	//.
 }
+*/

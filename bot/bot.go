@@ -174,7 +174,7 @@ func ReadAllEncoders() (int, int, int, int) {
 	return ReadEncoder(1), ReadEncoder(2), ReadEncoder(3), ReadEncoder(4)
 }
 
-// ResetEncoders resets all the encoders
+// ResetAllEncoders resets all the encoders
 func ResetAllEncoders() {
 	C.rc_encoder_eqep_write(1, 0)
 	C.rc_encoder_eqep_write(2, 0)
